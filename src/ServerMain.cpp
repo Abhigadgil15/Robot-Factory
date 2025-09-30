@@ -1,76 +1,57 @@
 #include <iostream>
-#include <cassert>
-#include <cstring>
+#include <cstdlib>
+#include <ctime>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <net/if.h>
-#include <netdb.h>
-#include <netinet/tcp.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include "Order.h"   
+#include "ServerStub.h"
+#include "Order.h"
 
 #define BACKLOG 8
-#define BUFFER_SIZE 64
 
-// Prototypes (defined in Communications.cpp)
-void part_3_server_recv_unmarshal(Order &order, char *buffer, int sockfd);
-void part_3_server_marshal_send(Robot &robot, char *buffer, int sockfd);
-
-int main(int argc, char *argv[])
-{
-    int sockfd, newfd;
-    struct sockaddr_in my_addr, addr;
-    unsigned int addr_size = sizeof(addr);
-    int port;
-    char buffer[BUFFER_SIZE];
-
+int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cout << "Usage\n" << argv[0] << " [port]" << std::endl;
+        std::cout << "Usage: " << argv[0] << " [port]" << std::endl;
         return 0;
     }
 
-    port = atoi(argv[1]);
+    int port = atoi(argv[1]);
 
-    /******************************************************************************
-     * Init network
-    ******************************************************************************/
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        perror("ERROR: failed to create socket");
-        return 0;
-    }
-    memset(&my_addr, '\0', sizeof(my_addr));
-    my_addr.sin_family = AF_INET;
-    my_addr.sin_port = htons(port);
-    my_addr.sin_addr.s_addr = INADDR_ANY;
-
-    if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) < 0) {
-        perror("ERROR: failed to bind");
-        return 0;
+    int listen_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (listen_sock < 0) {
+        perror("socket");
+        return 1;
     }
 
-    listen(sockfd, BACKLOG);
+    sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(listen_sock, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("bind");
+        return 1;
+    }
+
+    listen(listen_sock, BACKLOG);
     std::cout << "Waiting for client to connect..." << std::endl;
 
-    newfd = accept(sockfd, (struct sockaddr *)&addr, &addr_size);
-    if (newfd < 0) {
-        perror("ERROR: failed to accept");
-        return 0;
+    sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    int client_sock = accept(listen_sock, (sockaddr*)&client_addr, &client_len);
+    if (client_sock < 0) {
+        perror("accept");
+        return 1;
     }
 
-    /******************************************************************************
-     * Server loop: receive orders and send robots
-    ******************************************************************************/
+    // Initialize server stub
+    ServerStub server;
+    server.Init(client_sock);
+
     std::srand(time(nullptr));
 
     for (int i = 0; i < 5; i++) {
-        Order order;
-        Robot robot;
-
-        // 1. Receive and unmarshal order
-        part_3_server_recv_unmarshal(order, buffer, newfd);
+        // Receive order
+        Orders order = server.ReceiveOrder();
 
         std::cout << "[Received] Order {"
                   << " customer_id=" << order.GetCustomerID()
@@ -78,27 +59,26 @@ int main(int argc, char *argv[])
                   << ", robot_type=" << order.GetRobotType()
                   << " }" << std::endl;
 
-        // 2. Create a robot based on the order
-        int cust_id = order.GetCustomerID();
-        int ord_num = order.GetOrderNumber();
-        int rob_type = order.GetRobotType();
-        int eng_id  = std::rand() % 1000;   // assign random engineer
-        int exp_id  = (rob_type == 1) ? (std::rand() % 500) : -1;
+        // Create robot based on order
+        Robot robot;
+        int eng_id  = std::rand() % 1000;
+        int exp_id  = (order.GetRobotType() == 1) ? std::rand() % 500 : -1;
 
-        robot.SetRobot(cust_id, ord_num, rob_type, eng_id, exp_id);
+        robot.SetRobot(order.GetCustomerID(), order.GetOrderNumber(),
+                       order.GetRobotType(), eng_id, exp_id);
 
-        std::cout << "[Sending ] Robot {"
+        // Send robot
+        server.ShipRobot(robot);
+
+        std::cout << "[Sent] Robot {"
                   << " customer_id=" << robot.GetCustomerID()
                   << ", order_number=" << robot.GetOrderNumber()
                   << ", robot_type=" << robot.GetRobotType()
                   << ", engineer_id=" << robot.GetEngineerID()
                   << ", expert_id=" << robot.GetExpertID()
                   << " }" << std::endl;
-
-        // 3. Marshal and send robot
-        part_3_server_marshal_send(robot, buffer, newfd);
     }
 
-    close(sockfd);
-    return 1;
+    close(listen_sock);
+    return 0;
 }

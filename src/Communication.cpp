@@ -5,7 +5,7 @@
 #include "Order.h"
 
 // ------------------ Order ------------------
-int Order::Marshal(char *buffer)
+int Orders::Marshal(char *buffer)
 {
     int offset = 0;
 
@@ -25,7 +25,7 @@ int Order::Marshal(char *buffer)
     return offset;
 }
 
-void Order::Unmarshal(char *buffer)
+void Orders::Unmarshal(char *buffer)
 {
     int offset = 0;
     uint32_t net_customer_id, net_order_number, net_robot_type;
@@ -101,7 +101,7 @@ void Robot::Unmarshal(char *buffer)
 }
 
 // ------------------ Client / Server helpers ------------------
-void part_3_client_marshal_send_recv_unmarshal(Order &order, Robot &robot,
+void part_3_client_marshal_send_recv_unmarshal(Orders &order, Robot &robot,
                                                char *buffer, int sockfd)
 {
     int order_size = order.Marshal(buffer);
@@ -122,7 +122,7 @@ void part_3_client_marshal_send_recv_unmarshal(Order &order, Robot &robot,
     robot.Unmarshal(buffer);
 }
 
-void part_3_server_recv_unmarshal(Order &order, char *buffer, int sockfd)
+void part_3_server_recv_unmarshal(Orders &order, char *buffer, int sockfd)
 {
     int n = recv(sockfd, buffer, 64, 0);
     if (n <= 0)

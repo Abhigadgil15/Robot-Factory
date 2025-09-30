@@ -134,7 +134,7 @@ CFLAGS := -Wall -std=c++11
 LFLAGS := -pthread
 
 # Files
-COMMON_OBJS := Order.o Communication.o
+COMMON_OBJS := Order.o Communication.o ClientStub.o ServerStub.o
 SERVER_OBJS := ServerMain.o $(COMMON_OBJS)
 CLIENT_OBJS := ClientMain.o $(COMMON_OBJS)
 

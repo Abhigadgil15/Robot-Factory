@@ -1,5 +1,5 @@
-#ifndef __ORDER_H__
-#define __ORDER_H__
+#ifndef __ORDERS_H__
+#define __ORDERS_H__
 
 #include <string>
 
@@ -15,37 +15,14 @@
 // #define REQUEST_BUF_SIZE    46
 // #define RESPONSE_BUF_SIZE   14
 
-// class Request {
-//     unsigned int req_id;             
-//     unsigned short user_id;          
-//     std::string requester;  
-//     int num1;   
-//     int num2;
 
-// public:
-//     Request(): req_id(0), user_id(0), requester(""), 
-//         num1(0), num2(0) {}
-
-//     unsigned int GetReqID() { return req_id; }
-//     unsigned short GetUserID() { return user_id; }
-//     std::string GetRequester() { return requester; }
-//     int GetNum1() { return num1; }
-//     int GetNum2() { return num2; }
-
-//     void SetRequest(unsigned int req_id, unsigned short user_id, 
-//             std::string name, int num1, int num2);
-//     int Marshal(char *buffer);
-//     void Unmarshal(char *buffer);
-//     void PrintRequest();
-// };
-
-class Order {
+class Orders {
     int customer_id;     // customer id
     int order_number;    // number of orders issued so far by this customer
     int robot_type;      // 0 = regular, 1 = special
 
 public:
-    Order() : customer_id(0), order_number(0), robot_type(0) {}
+    Orders() : customer_id(0), order_number(0), robot_type(0) {}
 
     int GetCustomerID()  const { return customer_id; }
     int GetOrderNumber() const { return order_number; }
@@ -59,27 +36,6 @@ public:
 
     void PrintOrder() ;
 };
-
-// class Response {
-//     unsigned int req_id;
-//     unsigned short user_id;
-//     unsigned int res_id;
-//     int sum;
-
-// public:
-//     Response(): req_id(0), user_id(0), res_id(0), sum(0) {}
-
-//     unsigned int GetReqID() { return req_id; }
-//     unsigned short GetUserID() { return user_id; }
-//     unsigned short GetResID() { return res_id; }
-//     int GetSum() { return sum; }
-
-//     void SetResponse(unsigned int req_id, unsigned short user_id, 
-//             unsigned int res_id, int sum);
-//     int Marshal(char *buffer);
-//     void Unmarshal(char *buffer);
-//     void PrintResponse();
-// };
 
 // ---------- Robot (server → client) ----------
 class Robot {
