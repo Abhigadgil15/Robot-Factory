@@ -134,7 +134,7 @@ CFLAGS := -Wall -std=c++11
 LFLAGS := -pthread
 
 # Files
-COMMON_OBJS := Order.o Communication.o ClientStub.o ServerStub.o
+COMMON_OBJS := Order.o Communication.o ClientStub.o ServerStub.o CustomerThread.o
 SERVER_OBJS := ServerMain.o $(COMMON_OBJS)
 CLIENT_OBJS := ClientMain.o $(COMMON_OBJS)
 
@@ -156,7 +156,7 @@ client: $(CLIENT_OBJS)
 	$(CXX) $(LFLAGS) -o $@ $^
 
 # Generic rule for .o files
-%.o: %.cpp %.h
+%.o: %.cpp
 	$(CXX) $(CFLAGS) -c $< -o $@
 
 # Special case: Communications.cpp has no .h with same name
