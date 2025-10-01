@@ -3,6 +3,9 @@
 #include "ClientStub.h"
 #include "Order.h"
 
+extern std::vector<long long> all_latencies;
+extern std::mutex print_mutex;
+
 class CustomerThread {
 private:
     int customer_id;
@@ -13,17 +16,12 @@ private:
     ClientStub client;
     std::thread thread_obj;
 
+
     // The actual function executed by the thread
 
 public:
+
     CustomerThread(int cust_id, int n_orders, int r_type,
                    const std::string &ip, int port);
     void run();
-
-
-    // Start the thread
-    // void start();
-
-    // // Wait for thread completion
-    // void join();
 };

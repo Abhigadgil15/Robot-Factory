@@ -13,10 +13,16 @@ void CustomerThread::run() {
         std::cerr << "Customer " << customer_id << " failed to connect to server.\n";
         return;
     }
+    std::vector<long long> latencies;  
+    latencies.reserve(num_orders);
 
     for (int i = 0; i < num_orders; i++) {
-        Robot robot = client.Order(customer_id, i, robot_type);
+        auto start = std::chrono::high_resolution_clock::now();
 
+        Robot robot = client.Order(customer_id, i, robot_type);
+        auto end = std::chrono::high_resolution_clock::now();
+        long long latency = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        latencies.push_back(latency);
         std::cout << "[Customer " << customer_id << "] Received Robot {"
                   << " customer_id=" << robot.GetCustomerID()
                   << ", order_number=" << robot.GetOrderNumber()
@@ -26,6 +32,10 @@ void CustomerThread::run() {
                   << " }" << std::endl;
     }
 
+    {
+        std::lock_guard<std::mutex> lock(print_mutex);
+        all_latencies.insert(all_latencies.end(), latencies.begin(), latencies.end());
+    }
     // Connection will be closed automatically in ClientStub destructor if implemented
 }
 
