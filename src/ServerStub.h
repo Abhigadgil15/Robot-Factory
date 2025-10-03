@@ -10,7 +10,8 @@ public:
     ServerStub() : sockfd(-1) {}
 
     // Initialize with connected socket
-    void Init(int connected_sockfd) { sockfd = connected_sockfd; }
+    bool Init(int connected_sockfd) { sockfd = connected_sockfd;
+    return true; }
 
     // Receive order from client
     Orders ReceiveOrder();

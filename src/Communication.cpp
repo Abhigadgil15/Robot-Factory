@@ -122,16 +122,18 @@ void part_3_client_marshal_send_recv_unmarshal(Orders &order, Robot &robot,
     robot.Unmarshal(buffer);
 }
 
-void part_3_server_recv_unmarshal(Orders &order, char *buffer, int sockfd)
+bool part_3_server_recv_unmarshal(Orders &order, char *buffer, int sockfd)
 {
     int n = recv(sockfd, buffer, 64, 0);
     if (n <= 0)
     {
-        perror("server recv");
-        return;
+        // if (n == 0) std::cerr << "server recv: client closed connection\n";
+        // else perror("server recv");
+        return false;  
     }
 
     order.Unmarshal(buffer);
+    return true;
 }
 
 void part_3_server_marshal_send(Robot &robot, char *buffer, int sockfd)

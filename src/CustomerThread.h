@@ -2,9 +2,12 @@
 #include <thread>
 #include "ClientStub.h"
 #include "Order.h"
+#include <mutex>     // needed for std::mutex
+#include <vector>    // needed for std::vector
+#include <string>    // needed for std::string
 
-extern std::vector<long long> all_latencies;
-extern std::mutex print_mutex;
+extern std::vector<long long> all_latencies;  
+extern std::mutex print_mutex;  
 
 class CustomerThread {
 private:

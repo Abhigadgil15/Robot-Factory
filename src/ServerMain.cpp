@@ -1,83 +1,62 @@
 #include <iostream>
 #include <cstdlib>
-#include <ctime>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <thread>
 #include <vector>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
 #include <atomic>
+#include <mutex>
 
 #include "ServerStub.h"
 #include "Order.h"
 
-#define BACKLOG 8
-#define NUM_WORKERS 8  // Number of worker threads
-
-// Thread-safe queue for orders
-std::queue<std::pair<int, Orders>> orderQueue; // pair<client_sock, order>
-std::mutex queue_mtx;
-std::condition_variable cv;
-
-// Atomic counter for total orders processed
 std::atomic<int> totalOrdersProcessed(0);
+std::mutex print_mutex; // synchronize log printing
 
-// Worker thread function
-void worker() {
+void engineerThread(int client_sock, int eng_id) {
     ServerStub server;
-    while (true) {
-        std::pair<int, Orders> job;
-        {
-            std::unique_lock<std::mutex> lock(queue_mtx);
-            cv.wait(lock, [] { return !orderQueue.empty(); });
-            job = orderQueue.front();
-            orderQueue.pop();
-        }
-
-        int client_sock = job.first;
-        Orders order = job.second;
-
-        // If order is a "disconnect" signal
-        if (order.GetCustomerID() == -1) continue;
-
-        // Process order
-        Robot robot;
-        int eng_id = std::rand() % 1000;
-        int exp_id = (order.GetRobotType() == 1) ? std::rand() % 500 : -1;
-
-        robot.SetRobot(order.GetCustomerID(), order.GetOrderNumber(),
-                       order.GetRobotType(), eng_id, exp_id);
-
-        ServerStub tmp;
-        tmp.Init(client_sock);
-        tmp.ShipRobot(robot);
-
-        int currentTotal = ++totalOrdersProcessed;
-
-        std::cout << "[Server] Processed order " << currentTotal
-                  << " | customer_id=" << robot.GetCustomerID()
-                  << ", order_number=" << robot.GetOrderNumber() << std::endl;
+    if (!server.Init(client_sock)) {
+        std::lock_guard<std::mutex> lock(print_mutex);
+        std::cerr << "[Server] Failed to initialize ServerStub for client socket "
+                  << client_sock << std::endl << std::endl;
+        close(client_sock);
+        return;
     }
-}
-
-void clientReceiver(int client_sock) {
-    ServerStub server;
-    server.Init(client_sock);
 
     while (true) {
         Orders order = server.ReceiveOrder();
-        if (order.GetCustomerID() == -1) break; 
+        if (order.GetCustomerID() == -1) break;
 
+        Robot robot;
+        int exp_id = -1;
+        robot.SetRobot(order.GetCustomerID(), order.GetOrderNumber(),
+                       order.GetRobotType(), eng_id, exp_id);
+
+        server.ShipRobot(robot);
+
+        int currentTotal = ++totalOrdersProcessed;
+
+        // Structured log: Received → Sent → blank line
         {
-            std::lock_guard<std::mutex> lock(queue_mtx);
-            orderQueue.push({client_sock, order});
+            std::lock_guard<std::mutex> lock(print_mutex);
+            std::cout << "[Received] customer_id=" << order.GetCustomerID()
+                      << ", order_number=" << order.GetOrderNumber()
+                      << ", robot_type=" << order.GetRobotType()
+                      << std::endl;
+
+            std::cout << "[Sent] customer_id=" << robot.GetCustomerID()
+                      << ", order_number=" << robot.GetOrderNumber()
+                      << ", engineer_id=" << eng_id
+                      << ", expert_id=" << exp_id
+                      << ", total_processed=" << currentTotal
+                      << std::endl << std::endl;
         }
-        cv.notify_one(); // wake a worker
     }
 
     close(client_sock);
+    {
+        std::lock_guard<std::mutex> lock(print_mutex);
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -99,29 +78,32 @@ int main(int argc, char* argv[]) {
         perror("bind"); return 1;
     }
 
-    listen(listen_sock, BACKLOG);
-    std::cout << "Server listening on port " << port << std::endl;
-
-    // Start worker threads
-    std::vector<std::thread> workers;
-    for (int i = 0; i < NUM_WORKERS; i++) {
-        workers.emplace_back(worker);
+    if (listen(listen_sock, 8) < 0) {
+        perror("listen"); return 1;
     }
 
-    // Accept clients and spawn receiver threads
-    std::vector<std::thread> clientThreads;
+    std::cout << "[Server] Listening on port " << port << std::endl << std::endl;
+
+    std::vector<std::thread> engineerThreads;
+    int eng_counter = 0;
+
     while (true) {
         sockaddr_in client_addr{};
         socklen_t client_len = sizeof(client_addr);
         int client_sock = accept(listen_sock, (sockaddr*)&client_addr, &client_len);
         if (client_sock < 0) { perror("accept"); continue; }
 
-        clientThreads.emplace_back(clientReceiver, client_sock);
+        {
+            std::lock_guard<std::mutex> lock(print_mutex);
+            std::cout << "[Server] Accepted new client connection (socket " 
+                      << client_sock << ", engineer_id=" << eng_counter << ")"
+                      << std::endl << std::endl;
+        }
+
+        engineerThreads.emplace_back(engineerThread, client_sock, eng_counter++);
     }
 
-    for (auto &t : workers) t.join();
-    for (auto &t : clientThreads) t.join();
+    for (auto &t : engineerThreads) t.join();
     close(listen_sock);
-
     return 0;
 }

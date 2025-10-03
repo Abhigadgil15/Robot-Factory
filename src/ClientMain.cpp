@@ -25,8 +25,6 @@ int main(int argc, char* argv[]) {
 
     std::vector<std::shared_ptr<CustomerThread>> customers;
     std::vector<std::thread> threads;
-
-    // Start timer for throughput measurement
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < num_customers; i++) {
@@ -59,10 +57,10 @@ int main(int argc, char* argv[]) {
         double throughput = static_cast<double>(all_latencies.size()) / elapsed.count();
 
         // Print results: avg latency, min latency, max latency, throughput
-        std::cout << avg_latency << "\t"
-                  << min_latency << "\t"
-                  << max_latency << "\t"
-                  << throughput << std::endl;
+        std::cout << avg_latency << " µs\t"
+          << min_latency << " µs\t"
+          << max_latency << " µs\t"
+          << throughput << " orders/sec" << std::endl;
     }
 
     return 0;

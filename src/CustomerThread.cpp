@@ -1,6 +1,10 @@
 #include "CustomerThread.h"
 #include <iostream>
 #include <cstdlib>
+#include <mutex>    
+#include <vector>
+#include <chrono>
+
 
 CustomerThread::CustomerThread(int cust_id, int n_orders, int r_type,
                                const std::string &ip, int port)
@@ -8,7 +12,6 @@ CustomerThread::CustomerThread(int cust_id, int n_orders, int r_type,
       server_ip(ip), server_port(port) {}
 
 void CustomerThread::run() {
-    // Initialize connection
     if (!client.Init(server_ip, server_port)) {
         std::cerr << "Customer " << customer_id << " failed to connect to server.\n";
         return;
@@ -39,11 +42,4 @@ void CustomerThread::run() {
     // Connection will be closed automatically in ClientStub destructor if implemented
 }
 
-// void CustomerThread::start() {
-//     thread_obj = std::thread(&CustomerThread::run, this);
-// }
 
-// void CustomerThread::join() {
-//     if (thread_obj.joinable())
-//         thread_obj.join();
-// }
