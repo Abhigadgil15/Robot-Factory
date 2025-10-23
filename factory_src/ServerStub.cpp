@@ -6,18 +6,29 @@ void ServerStub::Init(std::unique_ptr<ServerSocket> socket) {
 	this->socket = std::move(socket);
 }
 
-RobotOrder ServerStub::ReceiveOrder() {
+CustomerRequest ServerStub::ReceiveRequest() {
 	char buffer[32];
-	RobotOrder order;
-	if (socket->Recv(buffer, order.Size(), 0)) {
-		order.Unmarshal(buffer);
+	CustomerRequest request;
+	if (socket->Recv(buffer, request.Size(), 0)) {
+		request.Unmarshal(buffer);
 	}
-	return order;	
+	return request;	
 }
 
-int ServerStub::SendRobot(RobotInfo info) {
+RobotInfo ServerStub::ShipRobot(RobotInfo info) {
 	char buffer[32];
-	info.Marshal(buffer);
-	return socket->Send(buffer, info.Size(), 0);
+	if (socket->Recv(buffer, info.Size(), 0)) {
+		info.Unmarshal(buffer);
+	}
+	return info;
 }
+
+CustomerRecord ServerStub::ReturnRecord(CustomerRecord record) {
+	char buffer[32];
+	if (socket->Recv(buffer, record.Size(), 0)) {
+		record.Unmarshal(buffer);
+	}
+	return record;
+}
+
 

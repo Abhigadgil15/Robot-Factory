@@ -12,8 +12,10 @@ private:
 public:
 	ServerStub();
 	void Init(std::unique_ptr<ServerSocket> socket);
-	RobotOrder ReceiveOrder();
-	int SendRobot(RobotInfo info);
+	CustomerRequest ReceiveRequest();
+	RobotInfo ShipRobot(RobotInfo info);
+	CustomerRecord ReturnRecord(CustomerRecord record);
+
 };
 
 #endif // end of #ifndef __SERVER_STUB_H__
