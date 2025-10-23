@@ -78,10 +78,10 @@ void RobotInfo::SetInfo(int id, int number, int type, int engid, int admid) {
     admin_id = admid;     // changed
 }
 
-void RobotInfo::CopyOrder(RobotOrder order) {
-    customer_id = order.GetCustomerId();
-    order_number = order.GetOrderNumber();
-    request_type = order.GetRobotType();  
+void RobotInfo::CopyRequest(CustomerRequest request) {
+    customer_id = request.GetCustomerId();
+    order_number = request.GetOrderNumber();
+    request_type = request.GetRequestType();  
 }
 
 void RobotInfo::SetEngineerId(int id) { engineer_id = id; }

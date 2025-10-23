@@ -51,7 +51,7 @@ public:
     }
 
     void SetInfo(int cid, int order_num, int req_type, int engid, int admid);
-    void CopyOrder(RobotOrder order);
+    void CopyRequest(CustomerRequest request);
     void SetEngineerId(int id);
     void SetAdminId(int id); // changed from SetExpertId
 

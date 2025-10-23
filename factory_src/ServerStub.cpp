@@ -1,6 +1,8 @@
 #include "ServerStub.h"
+#include <cstring>
 
 ServerStub::ServerStub() {}
+
 
 void ServerStub::Init(std::unique_ptr<ServerSocket> socket) {
 	this->socket = std::move(socket);
