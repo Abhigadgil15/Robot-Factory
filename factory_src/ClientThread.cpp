@@ -1,35 +1,53 @@
-// #include "ClientThread.h"
-// #include "Messages.h"
+#include "ClientThread.h"
+#include "Messages.h"
 
-// #include <iostream>
+#include <iostream>
 
-// ClientThreadClass::ClientThreadClass() {}
+ClientThreadClass::ClientThreadClass() {}
 
-// void ClientThreadClass::ThreadBody(std::string ip, int port, int id, int orders, int type) {
-// 	customer_id = id;
-// 	num_orders = orders;
-// 	robot_type = type;
-// 	if (!stub.Init(ip, port)) {
-// 		std::cout << "Thread " << customer_id << " failed to connect" << std::endl;
-// 		return;
-// 	}
-// 	for (int i = 0; i < num_orders; i++) {
-// 		RobotOrder order;
-// 		RobotInfo robot;
-// 		order.SetOrder(customer_id, i, robot_type);
+void ClientThreadClass::ThreadBody(std::string ip, int port, int id, int requests, int type) {
+	customer_id = id;
+	num_requests = requests;
+	request_type = type;
+	if (!stub.Init(ip, port)) {
+		std::cout << "Thread " << customer_id << " failed to connect" << std::endl;
+		return;
+	}
 
-// 		timer.Start();
-// 		robot = stub.Order(order);
-// 		timer.EndAndMerge();
+ if (request_type == 3) {
+        for (int cid = 0; cid < num_requests; cid++) {
+            CustomerRequest request;
+            request.SetRequest(cid, -1, 2);  
 
-// 		if (!robot.IsValid()) {
-// 			std::cout << "Invalid robot " << customer_id << std::endl;
-// 			break;	
-// 		} 
-// 	}
-// }
+            timer.Start();
+            RobotInfo robot = stub.Order(request);  
+    		CustomerRecord record;
+    		record.SetRecord(robot.GetCustomerId(), robot.GetOrderNumber()); 
+            timer.EndAndMerge();
+            if (record.IsValid() && record.GetCustomerId() != -1) {
+                std::cout << record.GetCustomerId() << "\t" << record.GetLastOrder() << std::endl;
+            }
+        }
+        return; // done scanning
+    }
+	
+	for (int i = 0; i < num_requests; i++) {
+		CustomerRequest request;
+		RobotInfo robot;
+		request.SetRequest(customer_id, i, request_type);
 
-// ClientTimer ClientThreadClass::GetTimer() {
-// 	return timer;	
-// }
+		timer.Start();
+		robot = stub.Order(request);
+		timer.EndAndMerge();
+
+		if (!robot.IsValid()) {
+			std::cout << "Invalid robot " << customer_id << std::endl;
+			break;	
+		} 
+	}
+}
+
+ClientTimer ClientThreadClass::GetTimer() {
+	return timer;	
+}
 

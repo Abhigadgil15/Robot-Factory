@@ -9,6 +9,8 @@
 
 #include "Messages.h"
 #include "ServerSocket.h"
+#include <map>
+
 
 struct AdminRequest
 {
@@ -22,6 +24,7 @@ private:
 	std::map<int, int> customer_record;			  // shared map
 	std::queue<CustomerRequest> pending_requests; // requests waiting for admin
 	std::mutex queue_mutex;						  // protects map and queue
+	std::mutex map_mutex;
 	std::condition_variable cv_admin;			  // admin waits on this
 	std::condition_variable cv_engineer;
 	std::vector<MapOp> smr_log;

@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 	int port;
 	int num_customers;
 	int num_orders;
-	int robot_type;
+	int request_type;
 	ClientTimer timer;
 
 	std::vector<std::shared_ptr<ClientThreadClass>> client_vector;
@@ -21,8 +21,7 @@ int main(int argc, char *argv[]) {
 	
 	if (argc < 6) {
 		std::cout << "not enough arguments" << std::endl;
-		std::cout << argv[0] << "[ip] [port #] [# customers] ";
-		std::cout << "[# orders] [robot type 0 or 1]" << std::endl;
+		std::cout << argv[0] << " [ip] [port #] [# customers] [# requests] [request type 1 or 2 or 3]" << std::endl;
 		return 0;
 	}
 
@@ -30,27 +29,35 @@ int main(int argc, char *argv[]) {
 	port = atoi(argv[2]);
 	num_customers = atoi(argv[3]);
 	num_orders = atoi(argv[4]);
-	robot_type = atoi(argv[5]);
+	request_type = atoi(argv[5]);
 
+	// ✅ Validate request type
+	if (request_type < 1 || request_type > 3) {
+		std::cerr << "Error: Invalid request type. Must be 1, 2, or 3." << std::endl;
+		return 1;
+	}
 
 	timer.Start();
 	for (int i = 0; i < num_customers; i++) {
-		auto client_cls = std::shared_ptr<ClientThreadClass>(new ClientThreadClass());
+		auto client_cls = std::make_shared<ClientThreadClass>();
 		std::thread client_thread(&ClientThreadClass::ThreadBody, client_cls,
-				ip, port, i, num_orders, robot_type);
+				ip, port, i, num_orders, request_type);
 
-		client_vector.push_back(std::move(client_cls));
+		client_vector.push_back(client_cls);
 		thread_vector.push_back(std::move(client_thread));
 	}
-	for (auto& th : thread_vector) {
+
+	for (auto &th : thread_vector) {
 		th.join();
 	}
+
 	timer.End();
 
-	for (auto& cls : client_vector) {
-		timer.Merge(cls->GetTimer());	
+	for (auto &cls : client_vector) {
+		timer.Merge(cls->GetTimer());
 	}
+
 	timer.PrintStats();
 
-	return 1;
+	return 0;
 }

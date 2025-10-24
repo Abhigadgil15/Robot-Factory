@@ -31,6 +31,8 @@ public:
 	void Print();
 };
 
+class CustomerRequest;  
+
 class RobotInfo {
 private:
     int customer_id;
