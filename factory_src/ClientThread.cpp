@@ -39,9 +39,7 @@ void ClientThreadClass::ThreadBody(std::string ip, int port, int id, int request
         timer.EndAndMerge();
 
         if (record.IsValid() && record.GetCustomerId() != -1) {
-            std::cout << "Customer Record:" << std::endl;
-            std::cout << "  Customer ID: " << record.GetCustomerId() << std::endl;
-            std::cout << "  Last Order: " << record.GetLastOrder() << std::endl;
+			std::cout << record.GetCustomerId() << "\t" << record.GetLastOrder() << std::endl;
         } else {
             std::cout << "Customer record not found for ID " << customer_id << std::endl;
         }
@@ -54,7 +52,7 @@ void ClientThreadClass::ThreadBody(std::string ip, int port, int id, int request
             request.SetRequest(cid, -1, 2);
 
             timer.Start();
-            CustomerRecord record = stub.ReadRecord(request);  // Use ReadRecord!
+            CustomerRecord record = stub.ReadRecord(request);  
             timer.EndAndMerge();
 
             if (record.IsValid() && record.GetCustomerId() != -1) {
