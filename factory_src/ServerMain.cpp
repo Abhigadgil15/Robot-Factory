@@ -5,47 +5,75 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <string>
 #include "ServerSocket.h"
 #include "ServerThread.h"
+#include <tuple>
+
+struct PeerInfo {
+    int id;
+    std::string ip;
+    int port;
+};
 
 int main(int argc, char *argv[]) {
-	int port;
-	int engineer_cnt = 0;
-	ServerSocket socket;
-	RobotFactory factory;
-	std::unique_ptr<ServerSocket> new_socket;
-	std::vector<std::thread> thread_vector;
-	
-	if (argc < 2) {
-		std::cout << "not enough arguments" << std::endl;
-		std::cout << argv[0] << "[port #]" << std::endl;
-		return 0;
-	}
-	port = atoi(argv[1]);
-	// for (int i = 0; i < num_experts; i++) {
-	// 	std::thread expert_thread(&RobotFactory::ExpertThread, &factory, engineer_cnt++);
-	// 	thread_vector.push_back(std::move(expert_thread));
-	// }
+    if (argc < 4) {
+        std::cout << "Not enough arguments - Usage: " 
+                  << argv[0] << " [port] [unique_id] [num_peers] "
+                  << "(repeat [ID] [IP] [port] for each peer)" << std::endl;
+        return 0;
+    }
 
+    int port = atoi(argv[1]);
+    int unique_id = atoi(argv[2]);
+    int num_peers = atoi(argv[3]);
 
+    if (argc != 4 + num_peers * 3) {
+        std::cout << "Invalid number of arguments for peers." << std::endl;
+        return 0;
+    }
 
+    // Parse peer info
+    std::vector<std::tuple<int, std::string, int>> peers;
+    for (int i = 0; i < num_peers; i++) {
+        int idx = 4 + i * 3;
+        int peer_id = atoi(argv[idx]);
+        std::string peer_ip = argv[idx + 1];
+        int peer_port = atoi(argv[idx + 2]);
+        peers.push_back(std::make_tuple(peer_id, peer_ip, peer_port));
+    }
+	RobotFactory::SetFactoryId(unique_id);
+    RobotFactory::SetPeerInfo(peers);
+
+    ServerSocket socket;
+    int engineer_cnt = 0;
+
+    // Initialize server socket
     if (!socket.Init(port)) {
         std::cout << "Socket initialization failed" << std::endl;
         return 0;
     }
 
-	std::thread admin_thread(&RobotFactory::AdminThread, &factory, 0);
-    thread_vector.push_back(std::move(admin_thread));
+    std::cout << "Server " << unique_id << " running on port " << port 
+              << " with " << num_peers << " peers." << std::endl;
 
-	while ((new_socket = socket.Accept())) {
-		std::thread engineer_thread(&RobotFactory::EngineerThread, &factory, 
-				std::move(new_socket), engineer_cnt++);
-		thread_vector.push_back(std::move(engineer_thread));
-	}
+    // Launch admin thread (1 per factory) - static method, no factory instance needed
+    std::thread admin_thread(&RobotFactory::AdminThread, 0);
+    admin_thread.detach();
 
-	for (auto &t : thread_vector) {
-        if (t.joinable())
-            t.join();
+    // Accept incoming engineer connections
+    while (true) {
+        std::unique_ptr<ServerSocket> new_socket = socket.Accept();
+        if (!new_socket) {
+            continue;
+        }
+        
+        std::cout << "Server " << unique_id << " - Engineer " << engineer_cnt << " connected" << std::endl;
+        
+        std::thread engineer_thread(&RobotFactory::EngineerThread, 
+                                    std::move(new_socket), engineer_cnt++);
+        engineer_thread.detach();
     }
-	return 0;
+
+    return 0;
 }

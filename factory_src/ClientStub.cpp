@@ -1,10 +1,23 @@
 #include <iostream>
 #include "ClientStub.h"
+#include "Messages.h"
 
 ClientStub::ClientStub() {}
 
 int ClientStub::Init(std::string ip, int port) {
-	return socket.Init(ip, port);	
+    int result = socket.Init(ip, port);
+    
+    if (result) {
+        IdentificationRequest id_msg;
+        id_msg.SetType(0);  // 0 = customer
+        char buffer[16];
+        id_msg.Marshal(buffer);
+        socket.Send(buffer, id_msg.Size(), 0);
+        
+        std::cout << "[ClientStub] Sent customer identification" << std::endl;
+    }
+    
+    return result;
 }
 
 RobotInfo ClientStub::Order(CustomerRequest request) {

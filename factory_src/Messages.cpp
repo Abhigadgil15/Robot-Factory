@@ -4,6 +4,9 @@
 #include <arpa/inet.h>
 #include "Messages.h"
 
+
+
+
 RobotOrder::RobotOrder() {
 	customer_id = -1;
 	order_number = -1;
@@ -257,4 +260,115 @@ bool CustomerRecord::IsValid() {
 void CustomerRecord::Print() {
 	std::cout << "id " << customer_id << " ";
 	std::cout << "last_order " << last_order << std::endl;
+}
+
+ReplicationRequest::ReplicationRequest() 
+    : factory_id(-1), committed_index(-1), last_index(-1) {
+    op.opcode = 0;
+    op.arg1 = 0;
+    op.arg2 = 0;
+}
+
+void ReplicationRequest::SetRequest(int fid, int cindex, int lindex, const MapOp& operation) {
+    factory_id = fid;
+    committed_index = cindex;
+    last_index = lindex;
+    op = operation;
+}
+
+int ReplicationRequest::GetFactoryId() const {
+    return factory_id;
+}
+
+int ReplicationRequest::GetCommittedIndex() const {
+    return committed_index;
+}
+
+int ReplicationRequest::GetLastIndex() const {
+    return last_index;
+}
+
+MapOp ReplicationRequest::GetOperation() const {
+    return op;
+}
+
+int ReplicationRequest::Size() const {
+    return sizeof(factory_id) + sizeof(committed_index) + sizeof(last_index) +
+           sizeof(op.opcode) + sizeof(op.arg1) + sizeof(op.arg2);
+}
+
+void ReplicationRequest::Marshal(char *buffer) const {
+    int offset = 0;
+    memcpy(buffer + offset, &factory_id, sizeof(factory_id));
+    offset += sizeof(factory_id);
+    memcpy(buffer + offset, &committed_index, sizeof(committed_index));
+    offset += sizeof(committed_index);
+    memcpy(buffer + offset, &last_index, sizeof(last_index));
+    offset += sizeof(last_index);
+    memcpy(buffer + offset, &op.opcode, sizeof(op.opcode));
+    offset += sizeof(op.opcode);
+    memcpy(buffer + offset, &op.arg1, sizeof(op.arg1));
+    offset += sizeof(op.arg1);
+    memcpy(buffer + offset, &op.arg2, sizeof(op.arg2));
+}
+
+void ReplicationRequest::Unmarshal(char *buffer) {
+    int offset = 0;
+    memcpy(&factory_id, buffer + offset, sizeof(factory_id));
+    offset += sizeof(factory_id);
+    memcpy(&committed_index, buffer + offset, sizeof(committed_index));
+    offset += sizeof(committed_index);
+    memcpy(&last_index, buffer + offset, sizeof(last_index));
+    offset += sizeof(last_index);
+    memcpy(&op.opcode, buffer + offset, sizeof(op.opcode));
+    offset += sizeof(op.opcode);
+    memcpy(&op.arg1, buffer + offset, sizeof(op.arg1));
+    offset += sizeof(op.arg1);
+    memcpy(&op.arg2, buffer + offset, sizeof(op.arg2));
+}
+
+// ===== ReplicationResponse Implementation =====
+ReplicationResponse::ReplicationResponse() : ack(0) {}
+
+void ReplicationResponse::SetAck(int acknowledgment) {
+    ack = acknowledgment;
+}
+
+int ReplicationResponse::GetAck() const {
+    return ack;
+}
+
+int ReplicationResponse::Size() const {
+    return sizeof(ack);
+}
+
+void ReplicationResponse::Marshal(char *buffer) const {
+    memcpy(buffer, &ack, sizeof(ack));
+}
+
+void ReplicationResponse::Unmarshal(char *buffer) {
+    memcpy(&ack, buffer, sizeof(ack));
+}
+
+
+IdentificationRequest::IdentificationRequest() : id_type(-1) {}
+
+void IdentificationRequest::SetType(int type) {
+    id_type = type;
+}
+
+int IdentificationRequest::GetType() const {
+    return id_type;
+}
+
+int IdentificationRequest::Size() const {
+    return sizeof(id_type);
+}
+
+void IdentificationRequest::Marshal(char *buffer) const {
+    memcpy(buffer, &id_type, sizeof(id_type));
+}
+
+void IdentificationRequest::Unmarshal(char *buffer) {
+    memcpy(&id_type, buffer, sizeof(id_type));
 }

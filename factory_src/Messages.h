@@ -133,5 +133,60 @@ class CustomerRecord {
 };
 
 
+class ReplicationRequest {
+private:
+    int factory_id;
+    int committed_index;
+    int last_index;
+    MapOp op;
+
+public:
+    ReplicationRequest();
+    
+    void SetRequest(int fid, int cindex, int lindex, const MapOp& operation);
+    
+    int GetFactoryId() const;
+    int GetCommittedIndex() const;
+    int GetLastIndex() const;
+    MapOp GetOperation() const;
+
+    int Size() const;
+    void Marshal(char *buffer) const;
+    void Unmarshal(char *buffer);
+};
+
+// Replication Response (Acknowledgment)
+class ReplicationResponse {
+private:
+    int ack; 
+
+public:
+    ReplicationResponse();
+    
+    void SetAck(int acknowledgment);
+    int GetAck() const;
+
+    int Size() const;
+    void Marshal(char *buffer) const;
+    void Unmarshal(char *buffer);
+};
+
+
+class IdentificationRequest {
+private:
+    int id_type;  // 0 = customer, 1 = PFA (replication)
+
+public:
+    IdentificationRequest();
+    void SetType(int type);
+    int GetType() const;
+    
+    int Size() const;
+    void Marshal(char *buffer) const;
+    void Unmarshal(char *buffer);
+};
+
+
+
 
 #endif // #ifndef __MESSAGES_H__
